@@ -1,0 +1,9 @@
+# Python & QA
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+# 报告和截图（可选：想推报告就删掉下面两行）
+reports/*.png
+# 如果不想每次都推 HTML 报告，也可以忽略：
+# reports/*.html
