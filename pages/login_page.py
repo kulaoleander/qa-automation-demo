@@ -2,6 +2,8 @@
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import StaleElementReferenceException, TimeoutException
+from logger import get_logger
 
 class LoginPage:
     URL = "https://the-internet.herokuapp.com/login"
@@ -15,17 +17,23 @@ class LoginPage:
     def __init__(self, driver, timeout=10):
         self.driver = driver
         self.wait = WebDriverWait(driver, timeout)
+        self.log = get_logger("login")  # 日志对象
 
     # —— 页面动作（方法名=人话步骤）——
     def open(self):
+        self.log.info("打开登录页")
         self.driver.get(self.URL)
         return self  # 允许链式写法：LoginPage(...).open().login(...)
 
     def login(self, username: str, password: str):
+        self.log.info(f"尝试登录：user={username!r}")
+        # 等待两个输入框都可见，再输入更稳
         self.wait.until(EC.visibility_of_element_located(self.USERNAME)).clear()
         self.driver.find_element(*self.USERNAME).send_keys(username)
-        self.driver.find_element(*self.PASSWORD).clear()
+
+        self.wait.until(EC.visibility_of_element_located(self.PASSWORD)).clear()
         self.driver.find_element(*self.PASSWORD).send_keys(password)
+
         self.driver.find_element(*self.SUBMIT).click()
         return self
 
@@ -34,6 +42,7 @@ class LoginPage:
         登录成功后，页面会跳到 /secure 并显示成功提示。
         做法：先等 URL 变化，再等提示出现，再等提示文字就绪。
         """
+        self.log.info("等待成功提示 & URL 进入 /secure")
         try:
             self.wait.until(EC.url_contains("/secure"))  # 先确认已经跳转
             self.wait.until(EC.visibility_of_element_located(self.FLASH))
@@ -54,4 +63,3 @@ class LoginPage:
             except StaleElementReferenceException:
                 continue
         return ""
- 
