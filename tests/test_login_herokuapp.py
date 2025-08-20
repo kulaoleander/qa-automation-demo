@@ -1,27 +1,22 @@
-import time
+# tests/test_login_herokuapp.py  （POM 版本）
 import pytest
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+from pages.login_page import LoginPage
 
-LOGIN_URL = "https://the-internet.herokuapp.com/login"
+CASES = [
+    ("tomsmith", "SuperSecretPassword!", True),   # 正确
+    ("tomsmith", "wrong", False),                 # 错误密码
+    ("", "SuperSecretPassword!", False),          # 空用户名
+    ("tomsmith", "", False),                      # 空密码
+]
 
-@pytest.mark.parametrize("username,password,should_success", [
-    ("tomsmith", "SuperSecretPassword!", True),     # 正确
-    ("tomsmith", "wrong", False),                   # 错误密码
-    ("", "SuperSecretPassword!", False),            # 空用户名
-    ("tomsmith", "", False),                        # 空密码
-])
-def test_login_cases(driver, username, password, should_success):
-    wait = WebDriverWait(driver, 10)
-    driver.get(LOGIN_URL)
+@pytest.mark.parametrize("username,password,should_success", CASES)
+def test_login_cases_pom(driver, username, password, should_success):
+    page = LoginPage(driver).open().login(username, password)
 
-    wait.until(EC.visibility_of_element_located((By.ID, "username"))).send_keys(username)
-    driver.find_element(By.ID, "password").send_keys(password)
-    driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
-
-    time.sleep(0.8)  # 等半秒让提示或跳转稳定
-
-    body_text = driver.find_element(By.TAG_NAME, "body").text
-    ok = "You logged into a secure area!" in body_text
-    assert ok == should_success
+    if should_success:
+        assert page.success_message_visible(), "期望成功，但没有看到成功提示"
+    else:
+        # 期望失败：flash 区应出现错误信息
+        text = page.flash_text()
+        assert "Your username is invalid!" in text or "Your password is invalid!" in text, \
+            f"期望失败，但没看到错误提示。实际：{text!r}"
