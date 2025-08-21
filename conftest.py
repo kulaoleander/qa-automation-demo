@@ -7,14 +7,17 @@ from webdriver_manager.chrome import ChromeDriverManager
 def driver():
     # 打开浏览器（最大化窗口）
     options = webdriver.ChromeOptions()
-    options.add_argument("--start-maximized")
+    options.add_argument("--headless")          # 新增：无头模式（关键）
+    options.add_argument("--no-sandbox")        # GitHub Actions 必需
+    options.add_argument("--disable-dev-shm-usage")  # GitHub Actions 必需
+
     drv = webdriver.Chrome(service=Service(ChromeDriverManager().install()),
                            options=options)
     yield drv
     drv.quit()
 
 
-# —— 失败自动截图（直接粘贴到 conftest.py 底部）——
+# —— 失败自动截图——
 import os
 from datetime import datetime
 
